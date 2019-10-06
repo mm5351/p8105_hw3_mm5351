@@ -6,7 +6,64 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(viridis)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  fig.width = 8,
+  fig.height = 6,
+  out.width = "90%"
+  )
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colur_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+```
+
+***Problem 1***
+```{r}
+library(p8105.datasets)
+data("instacart")
+```
+
+The instacart dataset contains `r nrow(instacart)` rows indicating the number of observations and `r ncol(instacart)` columns indicating the number of variables. Key variables include the numerical values for the order identifier (order_id), product ifentifier (product_id) and the  customer identifier (user_id). There are also identifiers specific to the types of products ordered such as the product name (product_name), the aisle it is from (aisle) and the department (department). 
+
+For example, for the customer with the ID 112108, the products ordered include `r filter(instacart, user_id == 112108) %>% pull(product_name)`. These products came from the following aisles respectively: `r filter(instacart, user_id == 112108) %>% pull(aisle)`. 
+
+```{r}
+aisle_data = 
+  instacart %>% 
+  select(aisle) %>% 
+  count(aisle) %>% 
+  arrange(desc(n)) 
+```
+
+There are `r nrow(aisle_data)` aisles. The top five aisles that food is ordered from in descending order include fresh vegetables, fresh fruits, packaged vegetables, fruits,	yogurt, and packaged cheese. 
+
+```{r}
+aisle_plot =
+  filter(aisle_data, n > 10000) %>%
+  ggplot(aes(x = aisle, y = n)) +
+  geom_point(alpha = 0.5) +
+    labs(
+    title = "Number of Items Ordered in Each Aisle",
+    x = "Aisle",
+    y = "Number of Items Ordered",
+    caption = "Data from Instacart")
+```
+
+```{r}
+aisle_table1 =
+  select(instacart, aisle, product_name) %>% 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%   arrange(desc(aisle)) 
 ```
 
 
