@@ -107,48 +107,72 @@ data("brfss_smart2010")
 
 ```{r}
 brfss_smart2010 =
-brfss_smart2010 %>% 
+  brfss_smart2010 %>% 
   janitor::clean_names() %>% 
+  separate(col = locationdesc, sep = "-", into = c("state", "county")) %>%
+  select(everything(), -locationabbr) %>% 
   filter(topic == "Overall Health") %>% 
   mutate(
     response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"), ordered = TRUE)) 
-```
-   ##mutate(
-    ##State = Locationabbr,
-    ##County = Locationdesc
-    ##)
-##Not allowing me to change the column names
-
+```  
+  
 In 2002, which states were observed at 7 or more locations? What about in 2010?
 ```{r}
+location2002_data = 
 brfss_smart2010 %>% 
-  select(year, locationabbr, locationdesc) %>% 
-  filter(year == 2002)
-
-##NOT DONE!!!
+  select(year, state, county) %>%
+  filter(year == 2002) %>% 
+  group_by(state) %>% 
+  count(state) %>% 
+  filter(n >= 7)
 ```
+
+In 2002, the states observed at 7 or more locations include `r pull(location2002_data, state)`.
+
+```{r}
+location2010_data = 
+brfss_smart2010 %>% 
+  select(year, state, county) %>%
+  filter(year == 2010) %>% 
+  group_by(state) %>% 
+  count(state) %>% 
+  filter(n >= 7)
+```
+
+In 2010, the states observed at 7 or more locations include `r pull(location2010_data, state)`.
 
 Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
 ```{r}
 excellent_data = 
 brfss_smart2010 %>% 
   filter(response == "Excellent") %>% 
-  group_by(locationabbr) %>% 
+  group_by(year, state) %>% 
   mutate(
     mean_data = mean(data_value)
   ) %>% 
-  select(response, year, locationabbr, mean_data)    
-```
+  select(response, year, state, mean_data) %>% 
+  drop_na()
 
-```{r}  
 ##spaghetti plot
-excellent_plot =
-  excellent_data %>% 
-  ggplot(aes(x = year, y = mean_data)) +
-  geom_line()
+excellent_data %>% 
+  ggplot(aes(x = year, y = mean_data, group = state, color = state)) +
+  geom_line() + 
+     labs(
+    title = "Average Data Value Over Time Within Each State",
+    x = "Year",
+    y = "Average Data Value",
+    caption = "Data from BRFSS")
 ```  
 
-Need to finish question 2
+Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+```{r}
+NY_data = 
+  brfss_smart2010 %>% 
+  select(year, state, county, response, data_value) %>% 
+  filter(year %in% c(2006, 2010))
+```
+
+Data won't let me also filter by state (state == "NY") -- no data in table despite there being data for this state.
 
 ***Problem 3***
 ```{r}
