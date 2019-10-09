@@ -51,7 +51,10 @@ There are `r nrow(aisle_data)` aisles. The top five aisles that food is ordered 
 ```{r}
 aisle_plot =
   aisle_data %>% 
-  filter(n > 10000) %>%
+  filter(n > 10000)  
+  
+##create plot  
+aisle_plot %>% 
   ggplot(aes(x = aisle, y = n)) +
   geom_point(alpha = 0.5) +
     labs(
@@ -67,10 +70,32 @@ aisle_plot =
 aisle_table1 =
   instacart %>% 
   select(aisle, product_name) %>% 
-  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%   
-  count(aisle, product_name) %>% 
-  top_n(product_name, 3)
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+  group_by(aisle) %>% 
+  count(product_name) %>%
+ mutate(product_rank = min_rank(desc(n))) %>% 
+  filter(product_rank < 4) %>% 
+  arrange(desc(n)) %>% 
+  select(everything(), -product_rank)
 ```
+
+```{r}
+aisle_table2 = 
+  instacart %>% 
+  select(product_name, order_dow, order_hour_of_day) %>% 
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  group_by(product_name, order_dow) %>% 
+  summarise(
+    mean_hour = mean(order_hour_of_day)
+  ) %>%  
+  arrange(order_dow) %>%
+  ##Format table  
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour,
+  ) 
+```
+
 
 
 ***Problem 2***
