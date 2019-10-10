@@ -109,7 +109,7 @@ data("brfss_smart2010")
 brfss_smart2010 =
   brfss_smart2010 %>% 
   janitor::clean_names() %>% 
-  separate(col = locationdesc, sep = "-", into = c("state", "county")) %>%
+  separate(col = locationdesc, sep = " -", into = c("state", "county")) %>%
   select(everything(), -locationabbr) %>% 
   filter(topic == "Overall Health") %>% 
   mutate(
@@ -165,14 +165,20 @@ excellent_data %>%
 ```  
 
 Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+
 ```{r}
 NY_data = 
   brfss_smart2010 %>% 
   select(year, state, county, response, data_value) %>% 
-  filter(year %in% c(2006, 2010))
+  mutate(state = as.factor(state)) %>% 
+  filter(year %in% c(2006, 2010), state == "NY") 
+
+NY_data %>% 
+ggplot(aes(x = response, y = data_value, color = response)) +
+  geom_boxplot() +
+  facet_grid(. ~year)
 ```
 
-Data won't let me also filter by state (state == "NY") -- no data in table despite there being data for this state.
 
 ***Problem 3***
 ```{r}
@@ -180,8 +186,50 @@ accel_data =
   read_csv("./Data/accel_data.csv") %>% 
   janitor::clean_names() %>% 
   mutate(
-    weekday = day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),
-    weekend = day %in% c("Saturday", "Sunday"))
-
+    weekday = day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")) %>% 
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "minute",
+    names_prefix = "activity_",
+    values_to = "activity"
+    ) %>% 
+  mutate(
+    minute = as.numeric(minute),
+    hour = minute %/% 60)
 ```
+
+Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. Are any trends apparent?  
+```{r}
+total_activity = 
+accel_data %>% 
+  group_by(week, day) %>% 
+  summarize(
+    total_activity = sum(activity)
+  ) 
+```
+
+Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. Describe in words any patterns or conclusions you can make based on this graph.
+
+```{r}
+accel_data %>%
+  group_by(week, day, hour) %>% 
+  summarize(
+    total_activity = sum(activity)
+  ) %>% 
+  
+ggplot((aes(x = hour, y = total_activity, color = day))) +
+  geom_line() +
+    labs(
+  title = "Accelerometer Activity Over the Course of the Day",
+  x = "Hour of Day",
+  y = "Activity",
+  caption = "Data from Advanced Cardiac Care Center of Columbia University Medical Center")  
+```
+
+
+
+
+
+
+
 
