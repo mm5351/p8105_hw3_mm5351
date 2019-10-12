@@ -29,16 +29,16 @@ theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
 ***Problem 1***
-```{r}
+```{r, instacart}
 library(p8105.datasets)
 data("instacart")
 ```
 
 The instacart dataset contains `r nrow(instacart)` rows indicating the number of observations and `r ncol(instacart)` columns indicating the number of variables. Key variables include the numerical values for the order identifier (order_id), product ifentifier (product_id) and the  customer identifier (user_id). There are also identifiers specific to the types of products ordered such as the product name (product_name), the aisle it is from (aisle) and the department (department). 
 
-For example, for the customer with the ID 112108, the products ordered include `r filter(instacart, user_id == 112108) %>% pull(product_name)`. These products came from the following aisles respectively: `r filter(instacart, user_id == 112108) %>% pull(aisle)`. 
+For example, for the customer with the ID 112108, the products ordered include `r filter(instacart, user_id == 112108) %>% pull(product_name)`. These products came from the following aisles respectively: `r filter(instacart, user_id == 112108) %>% pull(aisle)`. These products also came from the following departments respectively: `r filter(instacart, user_id == 112108) %>% pull(department)`. 
 
-```{r}
+```{r, aisle_data}
 aisle_data = 
   instacart %>% 
   select(aisle) %>% 
@@ -46,9 +46,9 @@ aisle_data =
   arrange(desc(n)) 
 ```
 
-There are `r nrow(aisle_data)` aisles. The top five aisles that food is ordered from in descending order include fresh vegetables, fresh fruits, packaged vegetables, fruits,	yogurt, and packaged cheese. 
+There are `r nrow(aisle_data)` aisles. The top five aisles that food is ordered from in descending order include `r filter(aisle_data, n >= 41699) %>% pull(aisle)`. 
 
-```{r}
+```{r, aisle_plot}
 aisle_plot =
   aisle_data %>% 
   arrange(aisle) %>% 
@@ -65,23 +65,21 @@ aisle_plot %>%
     caption = "Data from Instacart")
 ```
 
-
-
-```{r}
-aisle_table1 =
+```{r, aisle_popular}
+aisle_popular =
   instacart %>% 
   select(aisle, product_name) %>% 
   filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
   group_by(aisle) %>% 
   count(product_name) %>%
- mutate(product_rank = min_rank(desc(n))) %>% 
+  mutate(product_rank = min_rank(desc(n))) %>% 
   filter(product_rank < 4) %>% 
   arrange(desc(n)) %>% 
   select(everything(), -product_rank)
 ```
 
-```{r}
-aisle_table2 = 
+```{r, aisle_meanhour}
+aisle_meanhour = 
   instacart %>% 
   select(product_name, order_dow, order_hour_of_day) %>% 
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
@@ -90,22 +88,21 @@ aisle_table2 =
     mean_hour = mean(order_hour_of_day)
   ) %>%  
   arrange(order_dow) %>%
-  ##Format table  
-  pivot_wider(
-    names_from = order_dow,
-    values_from = mean_hour,
-  ) 
+
+##format table  
+pivot_wider(
+  names_from = order_dow,
+  values_from = mean_hour,
+) 
 ```
 
-
-
 ***Problem 2***
-```{r}
+```{r, brfss_smart2010}
 library(p8105.datasets)
 data("brfss_smart2010") 
 ```
 
-```{r}
+```{r, data cleaning}
 brfss_smart2010 =
   brfss_smart2010 %>% 
   janitor::clean_names() %>% 
@@ -116,10 +113,9 @@ brfss_smart2010 =
     response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"), ordered = TRUE)) 
 ```  
   
-In 2002, which states were observed at 7 or more locations? What about in 2010?
-```{r}
+```{r, location2002_data}
 location2002_data = 
-brfss_smart2010 %>% 
+  brfss_smart2010 %>% 
   select(year, state, county) %>%
   filter(year == 2002) %>% 
   group_by(state) %>% 
@@ -127,11 +123,11 @@ brfss_smart2010 %>%
   filter(n >= 7)
 ```
 
-In 2002, the states observed at 7 or more locations include `r pull(location2002_data, state)`.
+In 2002, the 36 states observed at seven or more locations include `r pull(location2002_data, state)`.
 
-```{r}
+```{r, location2010_data}
 location2010_data = 
-brfss_smart2010 %>% 
+  brfss_smart2010 %>% 
   select(year, state, county) %>%
   filter(year == 2010) %>% 
   group_by(state) %>% 
@@ -139,17 +135,15 @@ brfss_smart2010 %>%
   filter(n >= 7)
 ```
 
-In 2010, the states observed at 7 or more locations include `r pull(location2010_data, state)`.
+In 2010, the 45 states observed at seven or more locations include `r pull(location2010_data, state)`.
 
-Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
-```{r}
+```{r, excellent_data}
 excellent_data = 
-brfss_smart2010 %>% 
+  brfss_smart2010 %>% 
   filter(response == "Excellent") %>% 
   group_by(year, state) %>% 
   mutate(
-    mean_data = mean(data_value)
-  ) %>% 
+    mean_data = mean(data_value)) %>% 
   select(response, year, state, mean_data) %>% 
   drop_na()
 
@@ -164,24 +158,33 @@ excellent_data %>%
     caption = "Data from BRFSS")
 ```  
 
-Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+There is quite a bit of variation in the average data value between the states, when limiting responses to "Excellent". One of the locations with the highest average data values consistently throughout the years is DC, contrasting West Virginia which consistently ranked among the lowest.
 
-```{r}
+```{r, NY_data}
 NY_data = 
   brfss_smart2010 %>% 
   select(year, state, county, response, data_value) %>% 
   mutate(state = as.factor(state)) %>% 
   filter(year %in% c(2006, 2010), state == "NY") 
 
+##two-panel plot
 NY_data %>% 
-ggplot(aes(x = response, y = data_value, color = response)) +
+  ggplot(aes(x = response, y = data_value, color = response)) +
   geom_boxplot() +
-  facet_grid(. ~year)
+  facet_grid(. ~year) +
+     labs(
+    title = "Distribution of Data Values for Responses Among Locations in NY State",
+    x = "Response",
+    y = "Data Value",
+    caption = "Data from BRFSS")
 ```
 
+In 2006, the responses with the highest data values were "Good" and "Very good", followed by "Excellent", then "Fair", and lastly "Poor" with the lowest data values. Between "Good" and "Very good", "Very good" had a higher median data value, whereas "Good" had a larger distribution. "Poor" responses had the smallest distribution. 
+
+In 2010, the overall trend was fairly similar. However, "Very good" responses had both a larger median and distribution than in 2006 and in comparison to "Good" responses. The distributions for "Poor" and "Fair" responses increased. For "Excellent" responses, the interquartile range spanned to include lower data values than in 2006.
 
 ***Problem 3***
-```{r}
+```{r, accel_data}
 accel_data = 
   read_csv("./Data/accel_data.csv") %>% 
   janitor::clean_names() %>% 
@@ -198,38 +201,45 @@ accel_data =
     hour = minute %/% 60)
 ```
 
-Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. Are any trends apparent?  
-```{r}
+In the accel_data dataset, there are `r nrow(accel_data)` rows indicating the activity counts for every minute ofa 24-hour day over the course of 35 days. (60 minutes* 24 hours * 35 days = 50,400). There are `r ncol(accel_data)` columns indicating the number of variables. These key variables include the week number (week), the day number out of 35 (day_id), the day of the week (day), whether or not it is a weekday (weekday), the minute of the day starting at midnight (minute), the activity count (activity), and the hour of the day (hour).
+
+```{r, total_activity}
 total_activity = 
 accel_data %>% 
   group_by(week, day) %>% 
   summarize(
     total_activity = sum(activity)
-  ) 
+  )
+
+##identifying trends
+total_activity %>% 
+  ggplot((aes(x = day, y = total_activity, color = week))) +
+  geom_point() +
+     labs(
+    title = "Total Daily Activity",
+    x = "Day of the Week",
+    y = "Total Activity",
+    caption = "Data from Advanced Cardiac Care Center of Columbia University Medical Center")
 ```
 
-Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. Describe in words any patterns or conclusions you can make based on this graph.
+Based on the above figure, we can see that there is more consistency in total daily activity over the five weeks of observation on Tuesdays, Wednesdays, and Thursdays. The other days of the week experienced a wide range of activity counts over time. The lowest activity count was on a Saturday, whereas the highest activity count was on a Monday. 
 
-```{r}
+```{r, accel_plot}
+accel_plot = 
 accel_data %>%
   group_by(week, day, hour) %>% 
   summarize(
-    total_activity = sum(activity)
-  ) %>% 
-  
+    total_activity = sum(activity)) 
+
+##single-panel plot
+accel_plot %>% 
 ggplot((aes(x = hour, y = total_activity, color = day))) +
   geom_line() +
     labs(
   title = "Accelerometer Activity Over the Course of the Day",
   x = "Hour of Day",
   y = "Activity",
-  caption = "Data from Advanced Cardiac Care Center of Columbia University Medical Center")  
+  caption = "Data from Advanced Cardiac Care Center of Columbia University Medical Center") 
 ```
 
-
-
-
-
-
-
-
+Most of the activity for this individual occurs between hours 5 and 23, with spikes in activity at hour 6, 11, 16, 20, and 21. It possible that the individual goes to sleep between hours 23 and 5, and the minor changes in activity between this range is attributable to movements in sleep and/or getting up for various reasons (i.e. to get water or use the restroom). Activity appears to be higher in the middle of the day during the weekends and in the early morning and late evening during weekdays. This could potentially be attributable to work during the week in which the individual is more sedentary than on weekends.
